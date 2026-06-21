@@ -11,7 +11,7 @@ A self-hosted internal sales calculator for solar + battery quotes, built on **G
 The interesting constraint is **shared pricing with restricted editing, on infrastructure a small business already owns.** No server, no database, no hosting bill — just a Google account.
 
 - **One source of truth.** Pricing is stored as JSON in cell `A1` of a `Config` tab in a Google Sheet. Every rep's calculator reads from it, so nobody is quoting off a stale local copy.
-- **Server-enforced admin gate.** Anyone with the web app URL can *use* the calculator and *read* pricing. Only the Google accounts listed in `ADMIN_EMAILS` (in `Code.gs`) can *save* changes. The check runs server-side in `saveConfig()`, so it can't be bypassed by editing the page in the browser.
+- **Server-enforced admin gate.** Anyone with the web app URL can *use* the calculator and *read* pricing. Only the Google accounts listed in `ADMIN_EMAILS` (in `solar-calculator-template.gs`) can *save* changes. The check runs server-side in `saveConfig()`, so it can't be bypassed by editing the page in the browser.
 - **Runs as the owner.** The web app executes as the deploying account, so reps never need any access to the Sheet itself — only the URL.
 
 ---
@@ -34,14 +34,14 @@ The interesting constraint is **shared pricing with restricted editing, on infra
                                               ▲
                                               │ writes allowed ONLY if
                                               │ Session email ∈ ADMIN_EMAILS
-                                              └── (enforced in Code.gs)
+                                              └── (enforced in solar-calculator-template.gs)
 ```
 
 Two files make up the whole app:
 
 | File | Role |
 |------|------|
-| `Code.gs` | Backend. Serves the page, reads/writes the Config sheet, enforces the admin check. |
+| `solar-calculator-template.gs` | Backend. Serves the page, reads/writes the Config sheet, enforces the admin check. |
 | `Index.html` | The entire front end — form, live quote summary, and admin pricing panel — in one file. Talks to the backend via `google.script.run`. |
 
 ---
@@ -67,7 +67,7 @@ When a state rebate/loan applies, the summary shows **two** out-of-pocket figure
 
 ---
 
-## Configuration reference (`Code.gs`)
+## Configuration reference (`solar-calculator-template.gs`)
 
 | Setting | What it does |
 |---------|--------------|
@@ -100,7 +100,7 @@ About 15 minutes, done once, signed in with the **company Google account** that 
 
 ### 3. Add the code
 
-4. Delete the sample `myFunction` in `Code.gs` and **paste the full contents of `Code.gs`** from this repo.
+4. Delete the sample `myFunction` in `solar-calculator-template.gs` and **paste the full contents of `solar-calculator-template.gs`** from this repo.
 5. Edit **`ADMIN_EMAILS`** with the exact Google login emails allowed to edit pricing:
    ```js
    var ADMIN_EMAILS = [
@@ -130,7 +130,7 @@ About 15 minutes, done once, signed in with the **company Google account** that 
 
 ### Updating the code later
 
-Editing `Code.gs` or `Index.html` does **not** go live until you redeploy. Use **Deploy → Manage deployments → pencil (edit) → Version: New version → Deploy**. This keeps the **same URL** (creating a brand-new deployment instead gives a new URL). Adding or removing an admin is the same flow: edit `ADMIN_EMAILS`, then redeploy as a new version.
+Editing `solar-calculator-template.gs` or `Index.html` does **not** go live until you redeploy. Use **Deploy → Manage deployments → pencil (edit) → Version: New version → Deploy**. This keeps the **same URL** (creating a brand-new deployment instead gives a new URL). Adding or removing an admin is the same flow: edit `ADMIN_EMAILS`, then redeploy as a new version.
 
 ---
 
@@ -149,11 +149,11 @@ Editing `Code.gs` or `Index.html` does **not** go live until you redeploy. Use *
 
 ## Known limitations & honest notes
 
-- **Margins are not truly hidden.** Sales don't see `profit`/cost in the UI, but a technical user could read the config in the page source. For genuine hiding, move the price maths into `Code.gs` so the page only receives final figures. (Documented here rather than silently "fixed" because the trade-off — simplicity vs. true concealment — is a real product decision.)
+- **Margins are not truly hidden.** Sales don't see `profit`/cost in the UI, but a technical user could read the config in the page source. For genuine hiding, move the price maths into `solar-calculator-template.gs` so the page only receives final figures. (Documented here rather than silently "fixed" because the trade-off — simplicity vs. true concealment — is a real product decision.)
 - **Rebate figures are examples, not law.** STC deeming years, battery STC factor, zone ratings, and state rebate amounts change. Treat the shipped values as placeholders and confirm current figures before quoting.
 - **Admins must sign in with a company-domain account.** The email check relies on `Session.getActiveUser().getEmail()`, which can return blank for personal accounts accessing from outside the domain — such a user would be treated as non-admin.
 - **Last write wins.** Two admins saving in the same minute will have one overwrite the other. Fine for a small team.
-- **Supplier pricing is manual.** There's no live wholesaler feed; pricing is entered by hand or bulk-loaded via Import JSON. A server-side fetch in `Code.gs` is the natural extension if a dealer API becomes available.
+- **Supplier pricing is manual.** There's no live wholesaler feed; pricing is entered by hand or bulk-loaded via Import JSON. A server-side fetch in `solar-calculator-template.gs` is the natural extension if a dealer API becomes available.
 
 ---
 
