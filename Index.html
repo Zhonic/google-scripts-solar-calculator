@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solar Pricing Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#16203A; --ink-2:#1F2C4D;
+    --surface:#FFFFFF; --bg:#EEF1F6; --line:#DCE1EA;
+    --text:#1A2238; --muted:#687087;
+    --accent:#F4A300; --accent-deep:#D98800;
+    --save:#1F8A5B; --save-bg:#E7F4ED;
+    --error:#C0392B; --error-bg:#FBEAE8;
+    --display:'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+    --body:'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:var(--body); color:var(--text); background:var(--bg); line-height:1.5; -webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1120px; margin:0 auto; padding:32px 24px 80px}
+
+  header.mast{display:flex; align-items:flex-end; justify-content:space-between; gap:24px; margin-bottom:28px; flex-wrap:wrap}
+  .brand{display:flex; align-items:center; gap:14px}
+  .sun{width:34px;height:34px;flex:none}
+  h1{font-family:var(--display); font-weight:700; font-size:1.5rem; letter-spacing:-.01em; margin:0; color:var(--ink)}
+  .sub{color:var(--muted); font-size:.85rem; margin-top:2px}
+  .admin-toggle{font-family:var(--body); font-size:.82rem; font-weight:500; color:var(--muted); background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:8px 16px; cursor:pointer; display:inline-flex; align-items:center; gap:7px;}
+  .admin-toggle:hover{border-color:var(--accent); color:var(--ink)}
+  .admin-toggle svg{width:14px;height:14px}
+
+  .grid{display:grid; grid-template-columns:1.45fr 1fr; gap:28px; align-items:start}
+  @media (max-width:860px){ .grid{grid-template-columns:1fr} }
+
+  .step{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; margin-bottom:14px;}
+  .step.disabled{opacity:.5}
+  .step .eyebrow{display:flex; align-items:baseline; gap:10px; margin-bottom:10px}
+  .num{font-family:var(--display); font-weight:600; font-size:.72rem; color:var(--accent-deep); letter-spacing:.08em}
+  .step label.q{font-weight:600; font-size:.95rem; color:var(--ink)}
+  .hint{font-size:.78rem; color:var(--muted); margin:2px 0 0 0}
+  select, input[type=number], input[type=text], input[type=password]{width:100%; font-family:var(--body); font-size:.95rem; color:var(--text); padding:11px 12px; border:1px solid var(--line); border-radius:10px; background:var(--surface); appearance:none; -webkit-appearance:none;}
+  select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23687087' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 13px center; padding-right:34px; cursor:pointer;}
+  select:focus, input:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(244,163,0,.18)}
+  select:disabled{background-color:#F2F3F6; color:var(--muted); cursor:not-allowed}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  @media (max-width:520px){ .row2{grid-template-columns:1fr} }
+  @media (max-width:600px){
+    .wrap{padding:20px 14px 64px}
+    .summary-stick{position:static}
+    .oop .oop-val{font-size:2rem}
+    .oop-pair .oop-mid{font-size:1.45rem}
+    h1{font-size:1.3rem}
+    .step{padding:16px 15px}
+    .admin{padding:18px 15px}
+    .lines, .oop{padding-left:18px; padding-right:18px}
+    .copy-btn{width:calc(100% - 36px); margin-left:18px; margin-right:18px}
+    .err-box{margin-left:18px; margin-right:18px}
+    .brand-block .bb-head{flex-wrap:wrap}
+  }
+
+  .summary-stick{position:sticky; top:24px}
+  .receipt{background:var(--ink); color:#fff; border-radius:var(--radius); overflow:hidden; box-shadow:0 12px 30px rgba(22,32,58,.18);}
+  .receipt .r-head{padding:18px 22px 14px; border-bottom:1px solid rgba(255,255,255,.1)}
+  .receipt .r-head h2{font-family:var(--display); font-weight:600; font-size:1.05rem; margin:0; letter-spacing:-.01em}
+  .receipt .r-head p{margin:3px 0 0; font-size:.76rem; color:#A9B3CC}
+  .lines{padding:8px 22px 4px}
+  .line{display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding:9px 0; border-bottom:1px solid rgba(255,255,255,.07); font-variant-numeric:tabular-nums}
+  .line:last-child{border-bottom:none}
+  .line .l-label{font-size:.85rem; color:#D4DAE8}
+  .line .l-sublabel{display:block; font-size:.7rem; color:#8C97B5; margin-top:1px}
+  .line .l-val{font-family:var(--display); font-weight:500; font-size:.95rem; white-space:nowrap}
+  .line.total .l-label{color:#fff; font-weight:500}
+  .line.total .l-val{font-weight:600}
+  .line.deduct .l-val{color:#5FD3A0}
+  .line.deduct.zero{opacity:.45}
+  .line.deduct.zero .l-val,.line.deduct.zero .l-label{color:#7B86A3}
+
+  .oop{padding:16px 22px 20px; background:var(--ink-2)}
+  .oop .oop-label{font-size:.72rem; color:#A9B3CC; letter-spacing:.04em; text-transform:uppercase}
+  .oop .oop-val{font-family:var(--display); font-weight:700; font-size:2.3rem; letter-spacing:-.02em; color:var(--accent); line-height:1.12; margin-top:2px; font-variant-numeric:tabular-nums}
+  .oop .oop-val.muted{color:#5A658A}
+  .oop-dual{display:none}
+  .oop-dual.show{display:block}
+  .oop-single.hide{display:none}
+  .oop-pair{padding:12px 0; border-bottom:1px solid rgba(255,255,255,.08)}
+  .oop-pair:last-child{border-bottom:none}
+  .oop-pair.primary .oop-mid{color:var(--accent)}
+  .oop-pair .oop-mid{font-family:var(--display); font-weight:700; font-size:1.7rem; color:#fff; font-variant-numeric:tabular-nums; line-height:1.1; margin-top:2px}
+  .oop-pair .tag{display:inline-block; font-size:.62rem; letter-spacing:.05em; text-transform:uppercase; color:var(--ink); background:var(--accent); border-radius:5px; padding:2px 7px; margin-left:8px; vertical-align:middle}
+
+  .err-box{margin:0 22px 18px; background:rgba(192,57,43,.15); border:1px solid rgba(255,140,130,.4); border-radius:10px; padding:12px 14px; font-size:.82rem; color:#FFC9C2;}
+  .err-box strong{color:#fff; display:block; margin-bottom:4px; font-weight:600}
+  .err-box ul{margin:4px 0 0; padding-left:18px}
+  .err-box.hidden{display:none}
+
+  .copy-btn{width:calc(100% - 44px); margin:16px 22px 22px; padding:12px; border:none; border-radius:10px; background:var(--accent); color:var(--ink); font-family:var(--body); font-weight:600; font-size:.9rem; cursor:pointer; transition:background .15s;}
+  .copy-btn:hover{background:var(--accent-deep)}
+  .copy-btn:disabled{opacity:.5; cursor:not-allowed; background:rgba(255,255,255,.12); color:#9AA3BE}
+  .note{font-size:.74rem; color:var(--muted); margin-top:14px; line-height:1.55}
+
+  .admin{display:none; margin-top:30px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:22px 24px}
+  .admin.open{display:block}
+  .admin h2{font-family:var(--display); font-size:1.15rem; margin:0 0 4px; color:var(--ink)}
+  .admin .warn{background:#FFF7E6; border:1px solid #F2D98A; border-radius:10px; padding:12px 14px; font-size:.8rem; color:#7A5A00; margin:14px 0 22px}
+  .admin .caution{display:flex; gap:11px; align-items:flex-start; background:#FCEFE8; border:1px solid #E8A87C; border-left:4px solid var(--accent-deep); border-radius:10px; padding:14px 16px; margin:16px 0 8px; font-size:.86rem; color:#7A4B1E}
+  .admin .caution svg{width:20px;height:20px;flex:none;margin-top:1px;stroke:var(--accent-deep)}
+  .admin .caution strong{color:#5E370F}
+  .admin h3{font-family:var(--display); font-size:.95rem; color:var(--ink); margin:26px 0 10px; padding-bottom:6px; border-bottom:1px solid var(--line)}
+  .admin h3 .h3hint{font-family:var(--body); font-weight:400; font-size:.74rem; color:var(--muted); margin-left:8px}
+  .agrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px}
+  .afield label{display:block; font-size:.76rem; color:var(--muted); margin-bottom:4px; font-weight:500}
+  .tscroll{width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch}
+  .tbl{width:100%; border-collapse:collapse; font-size:.84rem; min-width:460px}
+  .tbl th{text-align:left; font-size:.68rem; color:var(--muted); font-weight:600; padding:6px 6px; text-transform:uppercase; letter-spacing:.03em}
+  .tbl td{padding:4px 6px; vertical-align:middle}
+  .tbl input{padding:8px 8px}
+  .ro{font-family:var(--display); font-variant-numeric:tabular-nums; color:var(--muted); white-space:nowrap; font-size:.85rem}
+  .ro.total{color:var(--ink); font-weight:600}
+  .mini-btn{font-size:.76rem; padding:6px 10px; border:1px solid var(--line); background:var(--surface); border-radius:8px; cursor:pointer; color:var(--muted)}
+  .mini-btn:hover{border-color:var(--accent); color:var(--ink)}
+  .mini-btn.danger:hover{border-color:var(--error); color:var(--error)}
+  .ord{display:inline-flex; flex-direction:column; gap:2px}
+  .ord button{border:1px solid var(--line); background:var(--surface); border-radius:5px; width:24px; height:18px; line-height:1; cursor:pointer; color:var(--muted); font-size:.7rem; padding:0}
+  .ord button:hover{border-color:var(--accent); color:var(--ink)}
+  .ord button:disabled{opacity:.3; cursor:default}
+  .brand-block{border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-bottom:12px}
+  .brand-block .bb-head{display:flex; gap:10px; align-items:center; margin-bottom:8px}
+  .brand-block .bb-head input{max-width:240px; font-weight:600}
+  .admin-actions{display:flex; gap:10px; flex-wrap:wrap; margin-top:26px; padding-top:18px; border-top:1px solid var(--line)}
+  .btn{font-family:var(--body); font-weight:600; font-size:.86rem; padding:11px 18px; border-radius:10px; cursor:pointer; border:1px solid var(--line); background:var(--surface); color:var(--text)}
+  .btn.primary{background:var(--ink); color:#fff; border-color:var(--ink)}
+  .btn.primary:hover{background:var(--ink-2)}
+  .btn:hover{border-color:var(--accent)}
+  .save-toast{font-size:.82rem; color:var(--save); font-weight:500; align-self:center; opacity:0; transition:opacity .2s}
+  .save-toast.show{opacity:1}
+
+  .gate-mask{position:fixed; inset:0; background:rgba(22,32,58,.5); display:none; align-items:center; justify-content:center; z-index:50; padding:20px}
+  .gate-mask.open{display:flex}
+  .gate{background:var(--surface); border-radius:var(--radius); padding:26px; width:100%; max-width:360px}
+  .gate h3{font-family:var(--display); margin:0 0 4px; color:var(--ink)}
+  .gate p{font-size:.82rem; color:var(--muted); margin:0 0 16px}
+  .gate .gate-actions{display:flex; gap:10px; margin-top:16px}
+  .gate .gate-err{color:var(--error); font-size:.8rem; margin-top:8px; min-height:1em}
+
+  @media (prefers-reduced-motion:reduce){ *{transition:none!important; animation:none!important} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="mast">
+    <div class="brand">
+      <svg class="sun" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+        <circle cx="20" cy="20" r="8" fill="var(--accent)"/>
+        <g stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round"><path d="M20 3v5M20 32v5M3 20h5M32 20h5M8 8l3.5 3.5M28.5 28.5L32 32M32 8l-3.5 3.5M11.5 28.5L8 32"/></g>
+      </svg>
+      <div><h1 id="brandTitle">Solar Pricing Calculator</h1><div class="sub" id="brandSub">Internal sales tool &middot; figures to enter into your quoting system</div></div>
+    </div>
+    <button class="admin-toggle" id="adminToggle">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Admin
+    </button>
+  </header>
+
+  <div class="grid">
+    <form id="calcForm" autocomplete="off">
+      <div class="step">
+        <div class="eyebrow"><span class="num">01</span><label class="q" for="f_state">Location / STC zone</label></div>
+        <p class="hint">Sets the STC zone rating used for the panel rebate.</p>
+        <select id="f_state" data-req><option value="">Select state…</option><option>VIC</option><option>NSW</option><option>QLD</option></select>
+      </div>
+
+      <div class="step">
+        <div class="eyebrow"><span class="num">02</span><label class="q" for="f_capacity">Number of panels (system)</label></div>
+        <p class="hint">Shown as panels &middot; system kW &middot; panel model.</p>
+        <select id="f_capacity" data-req><option value="">Select system…</option></select>
+      </div>
+
+      <div class="step">
+        <div class="eyebrow"><span class="num">03</span><label class="q" for="f_inverter">Inverter brand</label></div>
+        <p class="hint">Determines which battery range is available.</p>
+        <select id="f_inverter" data-req><option value="">Select inverter…</option></select>
+      </div>
+
+      <div class="step">
+        <div class="eyebrow"><span class="num">04</span><label class="q" for="f_battery">Battery type</label></div>
+        <p class="hint">Unlocks once an inverter is chosen — filtered to the matching brand.</p>
+        <select id="f_battery" data-req disabled><option value="">Pick an inverter first…</option></select>
+      </div>
+
+      <div class="step">
+        <div class="row2">
+          <div><div class="eyebrow"><span class="num">05</span><label class="q" for="f_roof">Roof type</label></div><select id="f_roof" data-req></select></div>
+          <div><div class="eyebrow"><span class="num">06</span><label class="q" for="f_house">House type</label></div><select id="f_house" data-req></select></div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="row2">
+          <div><div class="eyebrow"><span class="num">07</span><label class="q" for="f_subboard">Sub-board required</label></div><select id="f_subboard" data-req></select></div>
+          <div><div class="eyebrow"><span class="num">08</span><label class="q" for="f_phase">Phase type</label></div><select id="f_phase" data-req></select></div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="eyebrow"><span class="num">09</span><label class="q" for="f_backup">Backup required</label></div>
+        <select id="f_backup" data-req></select>
+      </div>
+
+      <div class="step">
+        <div class="eyebrow"><span class="num">10</span><label class="q" for="f_extra">Extra cost</label></div>
+        <p class="hint">Any additional cost, entered ex GST (GST is added automatically). Leave at 0 if none.</p>
+        <input type="number" id="f_extra" min="0" step="0.01" value="0" inputmode="decimal">
+      </div>
+
+      <div class="step">
+        <div class="eyebrow"><span class="num">11</span><label class="q" for="f_solarvic">Eligible for Solar Victoria</label></div>
+        <p class="hint">"Yes" applies the Solar VIC rebate &amp; loan (VIC only).</p>
+        <select id="f_solarvic" data-req><option value="">Select…</option><option>Yes</option><option>No</option></select>
+      </div>
+
+      <div class="step" id="step_loan">
+        <div class="eyebrow"><span class="num">12</span><label class="q" for="f_payloan">Pay the Solar VIC loan upfront?</label></div>
+        <p class="hint">Only applies when eligible for Solar Victoria. Both totals are shown either way.</p>
+        <select id="f_payloan"><option value="">Select…</option><option>Yes</option><option>No</option></select>
+      </div>
+    </form>
+
+    <div class="summary-stick">
+      <div class="receipt">
+        <div class="r-head"><h2>Quote summary</h2><p id="r-sub">Complete every field to see the price</p></div>
+        <div class="lines" id="lines">
+          <div class="line total"><span class="l-label">Total inc. GST</span><span class="l-val" id="v-total">—</span></div>
+          <div class="line deduct" id="line-panel"><span class="l-label">Less panels STC<span class="l-sublabel" id="sub-panel"></span></span><span class="l-val" id="v-panel">—</span></div>
+          <div class="line deduct" id="line-battery"><span class="l-label">Less battery STC<span class="l-sublabel" id="sub-battery"></span></span><span class="l-val" id="v-battery">—</span></div>
+          <div class="line deduct" id="line-rebate"><span class="l-label">Less Solar VIC rebate</span><span class="l-val" id="v-rebate">—</span></div>
+        </div>
+
+        <div class="oop">
+          <div class="oop-single" id="oopSingle">
+            <div class="oop-label">Out of pocket to customer</div>
+            <div class="oop-val muted" id="v-oop">—</div>
+          </div>
+          <div class="oop-dual" id="oopDual">
+            <div class="oop-pair" id="pairLoan">
+              <div class="oop-label">With interest-free loan<span class="tag" id="tagLoan" style="display:none">Customer's choice</span></div>
+              <div class="oop-mid" id="v-oop-loan">—</div>
+              <div class="l-sublabel" style="color:#8C97B5">loan repaid over time — lower upfront</div>
+            </div>
+            <div class="oop-pair" id="pairNoLoan">
+              <div class="oop-label">Loan paid upfront (no loan)<span class="tag" id="tagNoLoan" style="display:none">Customer's choice</span></div>
+              <div class="oop-mid" id="v-oop-noloan">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="err-box hidden" id="errBox"><strong>Can't price this yet</strong><ul id="errList"></ul></div>
+        <button type="button" class="copy-btn" id="copyBtn" disabled>Copy summary</button>
+      </div>
+      <p class="note" id="cfgNote"></p>
+    </div>
+  </div>
+
+  <section class="admin" id="adminPanel" aria-label="Admin settings"></section>
+</div>
+
+<script>
+/* ============================================================
+   SOLAR PRICING CALCULATOR  (Google Apps Script edition)
+   ------------------------------------------------------------
+   This page is served by an Apps Script web app (Code.gs).
+   - Pricing is stored centrally in a Google Sheet, shared by everyone.
+   - getConfig()  reads it (any user with access).
+   - saveConfig() writes it; the SERVER allows only admin emails.
+   The client-side DEFAULT_CONFIG below is just a fallback/seed.
+
+   LIVE SUPPLIER PRICING: not automatic. If your wholesaler offers a
+   dealer API/feed, fetch it inside Code.gs (server-side) and merge it
+   into getConfig(). Stop-gap today: Admin > Import JSON.
+   ============================================================ */
+
+/* ---- Branding: change these two strings to re-label the tool. ----
+   QUOTING_SYSTEM is the name of wherever your reps paste the figures
+   (a CRM, a proposal tool, a spreadsheet — whatever you use). */
+const BRAND_NAME = 'Solar Pricing Calculator';
+const QUOTING_SYSTEM = 'your quoting system';
+
+
+const DEFAULT_CONFIG = {
+  meta:{ pricesIncludeGST:true },
+  stc:{ deemingYears:5, price:38, zoneRating:{ VIC:1.382, NSW:1.382, QLD:1.382 } },
+  batteryStc:{ factor:6.8, price:38, tiers:[ {upTo:14,pct:1.0},{upTo:28,pct:0.6},{upTo:50,pct:0.15} ] },
+  solarVic:{ rebate:1400, loan:1400 },
+  // top-of-section settings for the capacity backend
+  capacitySettings:{ tinTilePerPanel:0, labourFactor:0.28 },
+  // each row: admin enters panels, watts, pricePerWatt, model. Rest auto-calculated.
+  capacities:[ { panels:15, watts:440, pricePerWatt:0, model:'Set panel model' } ],
+  // battery package price split into product + labour (both manual)
+  inverters:[
+    { brand:'Fox ESS',   batteries:[ {model:'Fox ESS — set model', kwh:0, productPrice:0, labourPrice:0, profit:0} ] },
+    { brand:'Goodwe',    batteries:[ {model:'Goodwe — set model', kwh:0, productPrice:0, labourPrice:0, profit:0} ] },
+    { brand:'Hiconis',   batteries:[ {model:'Hiconis — set model', kwh:0, productPrice:0, labourPrice:0, profit:0} ] },
+    { brand:'Solax',     batteries:[ {model:'Solax — set model', kwh:0, productPrice:0, labourPrice:0, profit:0} ] },
+    { brand:'Tesla',     batteries:[ {model:'Tesla Powerwall 3', kwh:13.5, productPrice:0, labourPrice:0, profit:0} ] },
+    { brand:'Sigenergy', batteries:[ {model:'Sigenergy — set model', kwh:0, productPrice:0, labourPrice:0, profit:0} ] }
+  ],
+  adders:{
+    // roof is a per-panel rate. Tin/Tile = 0 (baked into each capacity row). Clip lock = panels x 25.
+    roofPerPanel:{ 'Tin':0, 'Tile':0, 'Clip lock':25, 'Terracotta':0 },
+    house:   { 'Single':0, 'Double':0, 'Scissor lift required':0 },
+    subBoard:{ 'No':0, 'Yes':0 },
+    phase:   { 'Single':0, 'Two':0, 'Three':0 },
+    backup:  { 'No':0, 'Partial single phase':0, 'Full-house single phase':0, 'Partial three phase':0, 'Full-house three phase':0 }
+  },
+};
+
+/* ---- ids for stable referencing / reordering ---- */
+let _idc=0;
+function uid(p){ return p+'_'+Date.now().toString(36)+'_'+(_idc++); }
+function ensureIds(cfg){
+  (cfg.capacities||[]).forEach(c=>{ if(!c.id) c.id=uid('cap'); });
+  (cfg.inverters||[]).forEach(i=>{ if(!i.id) i.id=uid('inv'); (i.batteries||[]).forEach(b=>{ if(!b.id) b.id=uid('bat'); }); });
+}
+
+/* ---- transport: Google Apps Script backend ----
+   getConfig()  -> reads the shared Config sheet (everyone with access)
+   saveConfig() -> writes it; the SERVER rejects anyone not on the admin list.
+   deepMerge stays (used by JSON import). */
+function deepMerge(base, over){
+  if(Array.isArray(over)) return over;
+  if(over && typeof over==='object'){ for(const k in over){ base[k]=(k in base)?deepMerge(base[k],over[k]):over[k]; } return base; }
+  return over;
+}
+
+let CONFIG = null;
+let IS_ADMIN = false;
+const BACKEND = (typeof google!=='undefined' && google.script && google.script.run);
+
+function boot(){
+  document.title = BRAND_NAME;
+  $('brandTitle').textContent = BRAND_NAME;
+  $('brandSub').innerHTML = 'Internal sales tool &middot; figures to enter into '+QUOTING_SYSTEM;
+  if(!BACKEND){
+    // opened outside the Apps Script web app (e.g. a local file preview): show defaults
+    CONFIG = structuredClone(DEFAULT_CONFIG); ensureIds(CONFIG); IS_ADMIN=false;
+    renderForm(); recalc();
+    $('r-sub').textContent = 'Preview only — open the deployed web app for live pricing';
+    return;
+  }
+  google.script.run.withSuccessHandler(onBoot).withFailureHandler(onBootErr).getConfig();
+}
+function onBoot(res){
+  CONFIG = (res && res.config) ? res.config : structuredClone(DEFAULT_CONFIG);
+  ensureIds(CONFIG);
+  IS_ADMIN = !!(res && res.isAdmin);
+  renderForm(); recalc();
+}
+function onBootErr(err){
+  CONFIG = structuredClone(DEFAULT_CONFIG); ensureIds(CONFIG); IS_ADMIN=false;
+  renderForm(); recalc();
+  $('r-sub').textContent = 'Could not load pricing — '+((err&&err.message)||'try reloading');
+}
+
+const $ = id => document.getElementById(id);
+const fmt  = new Intl.NumberFormat('en-AU',{ style:'currency', currency:'AUD', maximumFractionDigits:0 });
+const fmt2 = new Intl.NumberFormat('en-AU',{ style:'currency', currency:'AUD', minimumFractionDigits:2, maximumFractionDigits:2 });
+const kwTxt = kw => (Math.round(kw*100)/100)+' kW';
+
+/* ============ CAPACITY ROW AUTO-CALC ============
+   col5 kW          = panels x watts / 1000   (named "kW"; raw = total watts)
+   col6 panel cost  = panels x watts x $/watt x 1.1
+   col7 tin/tile    = tinTilePerPanel x panels
+   labour           = labourFactor x (panels x watts) x 1.1   [per-watt rate]
+   col8 row total   = col6 + col7 + labour
+*/
+function capRow(c, s){
+  const panels = Number(c.panels)||0;
+  const wattsEa = Number(c.watts)||0;
+  const totalWatts = panels * wattsEa;
+  const kw = totalWatts/1000;
+  const panelCost = totalWatts * (Number(c.pricePerWatt)||0) * 1.1;
+  const roofBase  = (Number(s.tinTilePerPanel)||0) * panels * 1.1;   // tin/tile ex GST in, inc GST out
+  const labour    = (Number(s.labourFactor)||0) * totalWatts * 1.1;
+  const total     = panelCost + roofBase + labour;
+  return { panels, totalWatts, kw, panelCost, roofBase, labour, total };
+}
+
+/* ============ FORM POPULATION ============ */
+function fillOptions(el, items, placeholder){ // items: [{value,label}]
+  const cur=el.value; el.innerHTML='';
+  if(placeholder){ const o=document.createElement('option'); o.value=''; o.textContent=placeholder; el.appendChild(o); }
+  items.forEach(it=>{ const o=document.createElement('option'); o.value=it.value; o.textContent=it.label; el.appendChild(o); });
+  if([...el.options].some(o=>o.value===cur)) el.value=cur;
+}
+function fillKeys(el, keys, placeholder){ fillOptions(el, keys.map(k=>({value:k,label:k})), placeholder); }
+
+function renderForm(){
+  fillOptions($('f_capacity'), CONFIG.capacities.map(c=>{ const r=capRow(c,CONFIG.capacitySettings); return {value:c.id, label:`${r.panels} panels · ${kwTxt(r.kw)} · ${c.model}`}; }), 'Select system…');
+  fillOptions($('f_inverter'), CONFIG.inverters.map(i=>({value:i.id,label:i.brand})), 'Select inverter…');
+  fillKeys($('f_roof'), Object.keys(CONFIG.adders.roofPerPanel), 'Select roof…');
+  fillKeys($('f_house'), Object.keys(CONFIG.adders.house), 'Select house type…');
+  fillKeys($('f_subboard'), Object.keys(CONFIG.adders.subBoard), 'Select…');
+  fillKeys($('f_phase'), Object.keys(CONFIG.adders.phase), 'Select phase…');
+  fillKeys($('f_backup'), Object.keys(CONFIG.adders.backup), 'Select backup…');
+  refreshBatteries();
+  syncLoanStep();
+}
+function refreshBatteries(){
+  const sel=$('f_battery'); const inv=CONFIG.inverters.find(i=>i.id===$('f_inverter').value);
+  if(!inv){ sel.disabled=true; sel.innerHTML='<option value="">Pick an inverter first…</option>'; sel.value=''; return; }
+  sel.disabled=false;
+  fillOptions(sel, inv.batteries.map(b=>({value:b.id, label:b.model+(b.kwh?(' — '+b.kwh+' kWh'):'')})), 'Select '+inv.brand+' battery…');
+}
+function syncLoanStep(){
+  const eligible = ($('f_state').value==='VIC' && $('f_solarvic').value==='Yes');
+  const step=$('step_loan'), sel=$('f_payloan');
+  step.classList.toggle('disabled', !eligible);
+  sel.disabled = !eligible;
+  if(!eligible) sel.value='';
+}
+
+/* ============ CALC ============ */
+function batteryStcCount(kwh, cfg){ let prev=0,w=0; for(const t of cfg.tiers){ const band=Math.max(0,Math.min(kwh,t.upTo)-prev); w+=band*t.pct; prev=t.upTo; } return Math.floor(w*cfg.factor); }
+
+function readForm(){
+  return {
+    state:$('f_state').value, capId:$('f_capacity').value, invId:$('f_inverter').value, batId:$('f_battery').value,
+    roof:$('f_roof').value, house:$('f_house').value, subBoard:$('f_subboard').value, phase:$('f_phase').value,
+    backup:$('f_backup').value, extra:parseFloat($('f_extra').value), solarVic:$('f_solarvic').value, payLoan:$('f_payloan').value
+  };
+}
+function validate(f){
+  const m=[];
+  if(!f.state) m.push('Location / STC zone');
+  if(!f.capId) m.push('Number of panels');
+  if(!f.invId) m.push('Inverter brand');
+  if(!f.batId) m.push('Battery type');
+  if(!f.roof) m.push('Roof type');
+  if(!f.house) m.push('House type');
+  if(!f.subBoard) m.push('Sub-board');
+  if(!f.phase) m.push('Phase type');
+  if(!f.backup) m.push('Backup');
+  if(!f.solarVic) m.push('Solar Victoria eligibility');
+  if(f.state==='VIC' && f.solarVic==='Yes' && !f.payLoan) m.push('Pay loan upfront?');
+  return m;
+}
+function compute(f){
+  const cap=CONFIG.capacities.find(c=>c.id===f.capId);
+  const inv=CONFIG.inverters.find(i=>i.id===f.invId);
+  const bat=inv?inv.batteries.find(b=>b.id===f.batId):null;
+  const r = cap ? capRow(cap, CONFIG.capacitySettings) : {panels:0,kw:0,total:0};
+
+  const pkgProduct = bat?Number(bat.productPrice)||0:0;
+  const pkgLabour  = bat?Number(bat.labourPrice)||0:0;
+  const pkg = (pkgProduct + pkgLabour) * 1.1;   // package = (product + labour) inc GST
+
+  const roofRate = CONFIG.adders.roofPerPanel[f.roof]||0;
+  const roofCost = roofRate * r.panels * 1.1;   // ex GST in, inc GST out
+  const adders = roofCost + ((CONFIG.adders.house[f.house]||0) + (CONFIG.adders.subBoard[f.subBoard]||0) +
+                 (CONFIG.adders.phase[f.phase]||0) + (CONFIG.adders.backup[f.backup]||0)) * 1.1;
+  const extra = (isNaN(f.extra)?0:Math.max(0,f.extra)) * 1.1;   // entered ex GST
+  const profit = bat ? (Number(bat.profit)||0) * 1.1 : 0;       // per-battery margin, ex GST, hidden from sales
+
+  const total = r.total + pkg + adders + extra + profit; // profit silent
+
+  const zone = CONFIG.stc.zoneRating[f.state]||0;
+  const panelStcQty = Math.floor(r.kw * zone * CONFIG.stc.deemingYears);
+  const panelStcVal = panelStcQty * CONFIG.stc.price;
+
+  const kwh = bat?Number(bat.kwh)||0:0;
+  const batStcQty = batteryStcCount(kwh, CONFIG.batteryStc);
+  const batStcVal = batStcQty * CONFIG.batteryStc.price;
+
+  const vicOK = (f.state==='VIC' && f.solarVic==='Yes');
+  const rebate = vicOK?Number(CONFIG.solarVic.rebate)||0:0;
+  const loan   = vicOK?Number(CONFIG.solarVic.loan)||0:0;
+
+  const oopNoLoan = total - panelStcVal - batStcVal - rebate; // pay loan upfront
+  const oopWithLoan = oopNoLoan - loan;                       // take interest-free loan
+
+  return { r, total, pkgProduct, pkgLabour, roofCost, panelStcQty, panelStcVal, batStcQty, batStcVal, kwh,
+           rebate, loan, vicOK, oopNoLoan, oopWithLoan, kw:r.kw, payLoan:f.payLoan,
+           zeroPrice:(r.total===0 || pkg===0) };
+}
+
+/* ============ RENDER SUMMARY ============ */
+function setDeduct(lineId, valId, value, subId, subText){
+  $(valId).textContent = value===0 ? fmt.format(0) : '− '+fmt.format(value);
+  $(lineId).classList.toggle('zero', value===0);
+  if(subId) $(subId).textContent = subText||'';
+}
+function recalc(){
+  syncLoanStep();
+  const f=readForm(); const missing=validate(f);
+  const copyBtn=$('copyBtn'), rsub=$('r-sub'), errBox=$('errBox');
+
+  if(missing.length){
+    ['v-total','v-panel','v-battery','v-rebate'].forEach(id=>$(id).textContent='—');
+    $('oopSingle').classList.remove('hide'); $('oopDual').classList.remove('show');
+    $('v-oop').textContent='—'; $('v-oop').classList.add('muted');
+    rsub.textContent = missing.length+' field'+(missing.length>1?'s':'')+' still needed';
+    errBox.classList.remove('hidden'); $('errList').innerHTML=missing.map(x=>'<li>'+x+'</li>').join('');
+    copyBtn.disabled=true; window._last=null; return;
+  }
+
+  const c=compute(f);
+  $('v-total').textContent=fmt.format(c.total);
+  setDeduct('line-panel','v-panel',c.panelStcVal,'sub-panel', kwTxt(c.kw)+' → '+c.panelStcQty+' STCs @ '+fmt.format(CONFIG.stc.price));
+  setDeduct('line-battery','v-battery',c.batStcVal,'sub-battery', c.kwh+' kWh → '+c.batStcQty+' STCs');
+  setDeduct('line-rebate','v-rebate',c.rebate);
+
+  if(c.vicOK){
+    $('oopSingle').classList.add('hide'); $('oopDual').classList.add('show');
+    $('v-oop-loan').textContent=fmt.format(c.oopWithLoan);
+    $('v-oop-noloan').textContent=fmt.format(c.oopNoLoan);
+    const payUpfront = (c.payLoan==='Yes');
+    $('pairLoan').classList.toggle('primary', !payUpfront);
+    $('pairNoLoan').classList.toggle('primary', payUpfront);
+    $('tagLoan').style.display = (!payUpfront && c.payLoan) ? 'inline-block':'none';
+    $('tagNoLoan').style.display = (payUpfront) ? 'inline-block':'none';
+  }else{
+    $('oopSingle').classList.remove('hide'); $('oopDual').classList.remove('show');
+    $('v-oop').textContent=fmt.format(c.oopNoLoan); $('v-oop').classList.remove('muted');
+  }
+
+  rsub.textContent = c.zeroPrice ? '⚠ Some package prices are $0 — check Admin' : 'Ready to enter into '+QUOTING_SYSTEM;
+  errBox.classList.add('hidden'); copyBtn.disabled=false; window._last={f,c};
+}
+
+/* ============ COPY ============ */
+$('copyBtn').addEventListener('click', ()=>{
+  const d=window._last; if(!d) return; const {f,c}=d;
+  const inv=CONFIG.inverters.find(i=>i.id===f.invId); const bat=inv.batteries.find(b=>b.id===f.batId);
+  const cap=CONFIG.capacities.find(x=>x.id===f.capId);
+  const L=[
+    BRAND_NAME.toUpperCase()+' — SOLAR QUOTE',
+    'State: '+f.state,
+    'System: '+c.r.panels+' panels · '+kwTxt(c.kw)+' · '+cap.model,
+    'Inverter: '+inv.brand,
+    'Battery: '+bat.model+' ('+c.kwh+' kWh)',
+    'Roof: '+f.roof+'  |  House: '+f.house,
+    'Sub-board: '+f.subBoard+'  |  Phase: '+f.phase,
+    'Backup: '+f.backup,
+    'Extra cost: '+fmt2.format(isNaN(f.extra)?0:f.extra),
+    '------------------------------',
+    'Total inc. GST: '+fmt.format(c.total),
+    'Less panels STC: −'+fmt.format(c.panelStcVal)+' ('+c.panelStcQty+' STCs)',
+    'Less battery STC: −'+fmt.format(c.batStcVal)+' ('+c.batStcQty+' STCs)',
+    'Less Solar VIC rebate: −'+fmt.format(c.rebate),
+    '------------------------------'
+  ];
+  if(c.vicOK){
+    L.push('OUT OF POCKET (with interest-free loan): '+fmt.format(c.oopWithLoan));
+    L.push('OUT OF POCKET (loan paid upfront): '+fmt.format(c.oopNoLoan));
+    L.push('Customer chose to pay loan upfront: '+(f.payLoan||'—'));
+  }else{
+    L.push('OUT OF POCKET: '+fmt.format(c.oopNoLoan));
+  }
+  navigator.clipboard.writeText(L.join('\n')).then(()=>{ const b=$('copyBtn'); const t=b.textContent; b.textContent='Copied ✓'; setTimeout(()=>b.textContent=t,1400); });
+});
+
+/* ============ FORM EVENTS ============ */
+$('calcForm').addEventListener('change', e=>{ if(e.target.id==='f_inverter') refreshBatteries(); recalc(); });
+$('calcForm').addEventListener('input', e=>{ if(e.target.id==='f_extra') recalc(); });
+
+/* ============ ADMIN ============ */
+let editCfg=null;
+function moveItem(arr,i,dir){ const j=i+dir; if(j<0||j>=arr.length) return; [arr[i],arr[j]]=[arr[j],arr[i]]; }
+function reorderObj(obj,i,dir){ const e=Object.entries(obj); const j=i+dir; if(j<0||j>=e.length) return obj; [e[i],e[j]]=[e[j],e[i]]; return Object.fromEntries(e); }
+function ordBtns(i,len,kind,extra){ // returns html
+  return `<span class="ord"><button data-up="${kind}|${i}${extra?('|'+extra):''}" ${i===0?'disabled':''}>▲</button><button data-down="${kind}|${i}${extra?('|'+extra):''}" ${i===len-1?'disabled':''}>▼</button></span>`;
+}
+
+function adminRender(){
+  editCfg = structuredClone(CONFIG); ensureIds(editCfg);
+  $('adminPanel').innerHTML = `
+    <h2>Background pricing &amp; settings</h2>
+    <div class="caution"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><div><strong>Enter every dollar value EX GST.</strong> The calculator adds GST automatically (×1.1) to panels, labour, battery product/labour, per-battery profit, all roof/house/sub-board/phase/backup adders, and the sales rep's extra cost. Do not pre-add GST yourself or it will be charged twice.</div></div>
+    <div class="warn"><strong>Heads up:</strong> changes here save to the <em>shared</em> Google Sheet and take effect for everyone the next time they load the page. Only the admin emails listed in <em>Code.gs</em> can save — others get a permission error. Per-battery profit and your cost base are not shown to sales in the UI, but a technical user could still read them in the page source; for true hiding, move the price maths server-side later. If two admins edit at once, the last Save wins.</div>
+
+    <h3>Federal panel STC</h3>
+    <div class="agrid">
+      <div class="afield"><label>Deeming years</label><input type="number" step="0.01" data-k="stc.deemingYears"></div>
+      <div class="afield"><label>STC price ($)</label><input type="number" step="0.01" data-k="stc.price"></div>
+      <div class="afield"><label>Zone rating — VIC</label><input type="number" step="0.001" data-k="stc.zoneRating.VIC"></div>
+      <div class="afield"><label>Zone rating — NSW</label><input type="number" step="0.001" data-k="stc.zoneRating.NSW"></div>
+      <div class="afield"><label>Zone rating — QLD</label><input type="number" step="0.001" data-k="stc.zoneRating.QLD"></div>
+    </div>
+
+    <h3>Federal battery STC <span class="h3hint">Cheaper Home Batteries — May–Dec 2026</span></h3>
+    <div class="agrid">
+      <div class="afield"><label>STC factor / kWh</label><input type="number" step="0.01" data-k="batteryStc.factor"></div>
+      <div class="afield"><label>STC price ($)</label><input type="number" step="0.01" data-k="batteryStc.price"></div>
+    </div>
+    <div class="tscroll"><table class="tbl" style="margin-top:10px"><thead><tr><th>Tier up to (kWh)</th><th>% of factor</th></tr></thead><tbody id="tierRows"></tbody></table></div>
+
+    <h3>Solar Victoria <span class="h3hint">VIC + eligible only</span></h3>
+    <div class="agrid">
+      <div class="afield"><label>Rebate ($)</label><input type="number" step="1" data-k="solarVic.rebate"></div>
+      <div class="afield"><label>Matching loan ($)</label><input type="number" step="1" data-k="solarVic.loan"></div>
+    </div>
+
+    <h3>System capacity <span class="h3hint">grey columns are auto-calculated</span></h3>
+    <div class="agrid">
+      <div class="afield"><label>Tin/Tile roof — $ per panel (ex GST)</label><input type="number" step="0.01" data-k="capacitySettings.tinTilePerPanel"></div>
+      <div class="afield"><label>Labour factor — $ per watt</label><input type="number" step="0.001" data-k="capacitySettings.labourFactor"></div>
+    </div>
+    <div class="tscroll"><table class="tbl" style="margin-top:12px">
+      <thead><tr><th></th><th>Panels</th><th>Watts ea</th><th>$/watt</th><th>Model</th><th>kW</th><th>Panels $</th><th>Tin/tile $</th><th>Labour $</th><th>Row total $</th><th></th></tr></thead>
+      <tbody id="capRows"></tbody>
+    </table></div>
+    <button class="mini-btn" id="addCap" style="margin-top:8px">+ Add capacity row</button>
+
+    <h3>Inverter brands &amp; battery packages <span class="h3hint">product + labour, both manual</span></h3>
+    <div id="invBlocks"></div>
+    <button class="mini-btn" id="addInv">+ Add inverter brand</button>
+
+    <h3>Cost adders</h3>
+    <div id="adderBlocks"></div>
+
+    <div class="admin-actions">
+      <button class="btn primary" id="saveCfg">Save settings</button>
+      <button class="btn" id="exportCfg">Export JSON</button>
+      <button class="btn" id="importCfg">Import JSON</button>
+      <button class="btn" id="resetCfg">Reset to defaults</button>
+      <span class="save-toast" id="saveToast">Saved ✓</span>
+    </div>
+    <input type="file" id="importFile" accept="application/json" style="display:none">
+  `;
+
+  document.querySelectorAll('#adminPanel input[data-k]').forEach(inp=>{
+    inp.value=getPath(editCfg, inp.dataset.k);
+    inp.addEventListener('input', ()=>{ setPath(editCfg, inp.dataset.k, inp.type==='number'?(parseFloat(inp.value)||0):inp.value); if(inp.dataset.k.startsWith('capacitySettings'))updateCapComputed(); });
+  });
+
+  renderTiers(); renderCaps(); renderInvBlocks(); renderAdders();
+
+  $('addCap').onclick=()=>{ editCfg.capacities.push({id:uid('cap'),panels:0,watts:0,pricePerWatt:0,model:'New model'}); renderCaps(); };
+  $('addInv').onclick=()=>{ editCfg.inverters.push({id:uid('inv'),brand:'New brand',batteries:[{id:uid('bat'),model:'New battery',kwh:0,productPrice:0,labourPrice:0}]}); renderInvBlocks(); };
+  $('saveCfg').onclick=()=>{
+    const btn=$('saveCfg'); btn.disabled=true; btn.textContent='Saving…';
+    const payload=structuredClone(editCfg);
+    google.script.run
+      .withSuccessHandler(()=>{ CONFIG=payload; btn.disabled=false; btn.textContent='Save settings'; renderForm(); recalc(); const t=$('saveToast'); t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1600); })
+      .withFailureHandler((e)=>{ btn.disabled=false; btn.textContent='Save settings'; alert((e&&e.message)||'Save failed. You may not have edit access.'); })
+      .saveConfig(JSON.stringify(payload));
+  };
+  $('resetCfg').onclick=()=>{ if(confirm('Reset all pricing to defaults? This overwrites the shared config for everyone.')){ const def=structuredClone(DEFAULT_CONFIG); ensureIds(def); google.script.run.withSuccessHandler(()=>{ CONFIG=def; renderForm(); recalc(); adminRender(); }).withFailureHandler(e=>alert((e&&e.message)||'Reset failed.')).saveConfig(JSON.stringify(def)); } };
+  $('exportCfg').onclick=()=>{ const b=new Blob([JSON.stringify(editCfg,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='solar-config.json'; a.click(); URL.revokeObjectURL(a.href); };
+  $('importCfg').onclick=()=> $('importFile').click();
+  $('importFile').onchange=(e)=>{ const file=e.target.files[0]; if(!file)return; const r=new FileReader(); r.onload=()=>{ try{ const j=JSON.parse(r.result); const merged=deepMerge(structuredClone(DEFAULT_CONFIG),j); ensureIds(merged); google.script.run.withSuccessHandler(()=>{ editCfg=merged; CONFIG=structuredClone(merged); renderForm(); recalc(); adminRender(); }).withFailureHandler(err=>alert((err&&err.message)||'Import save failed.')).saveConfig(JSON.stringify(merged)); }catch(err){ alert('Invalid JSON: '+err.message); } }; r.readAsText(file); };
+
+  // delegated reorder handler
+  $('adminPanel').onclick=(e)=>{
+    const up=e.target.closest('[data-up]'), down=e.target.closest('[data-down]'); const btn=up||down; if(!btn)return;
+    const dir = up?-1:1; const parts=(up?up.dataset.up:down.dataset.down).split('|'); const kind=parts[0]; const i=+parts[1];
+    if(kind==='cap'){ moveItem(editCfg.capacities,i,dir); renderCaps(); }
+    else if(kind==='inv'){ moveItem(editCfg.inverters,i,dir); renderInvBlocks(); }
+    else if(kind==='bat'){ const ii=+parts[2]; moveItem(editCfg.inverters[ii].batteries,i,dir); renderInvBlocks(); }
+    else if(kind==='adder'){ const key=parts[2]; editCfg.adders[key]=reorderObj(editCfg.adders[key],i,dir); renderAdders(); }
+  };
+}
+
+function renderTiers(){
+  $('tierRows').innerHTML=editCfg.batteryStc.tiers.map((t,i)=>`<tr><td><input type="number" step="0.1" value="${t.upTo}" data-tier="${i}" data-f="upTo"></td><td><input type="number" step="0.01" value="${t.pct}" data-tier="${i}" data-f="pct"></td></tr>`).join('');
+  $('tierRows').querySelectorAll('input').forEach(inp=>inp.addEventListener('input',()=>{ editCfg.batteryStc.tiers[+inp.dataset.tier][inp.dataset.f]=parseFloat(inp.value)||0; }));
+}
+function renderCaps(){
+  const s=editCfg.capacitySettings;
+  $('capRows').innerHTML=editCfg.capacities.map((c,i)=>{
+    const r=capRow(c,s);
+    return `<tr>
+      <td>${ordBtns(i,editCfg.capacities.length,'cap')}</td>
+      <td><input type="number" step="1" value="${c.panels}" data-cap="${i}" data-f="panels" style="max-width:80px"></td>
+      <td><input type="number" step="1" value="${c.watts}" data-cap="${i}" data-f="watts" style="max-width:90px"></td>
+      <td><input type="number" step="0.0001" value="${c.pricePerWatt}" data-cap="${i}" data-f="pricePerWatt" style="max-width:90px"></td>
+      <td><input type="text" value="${esc(c.model)}" data-cap="${i}" data-f="model"></td>
+      <td class="ro" id="ro-kw-${i}">${kwTxt(r.kw)}</td>
+      <td class="ro" id="ro-pc-${i}">${fmt.format(r.panelCost)}</td>
+      <td class="ro" id="ro-rf-${i}">${fmt.format(r.roofBase)}</td>
+      <td class="ro" id="ro-lb-${i}">${fmt.format(r.labour)}</td>
+      <td class="ro total" id="ro-tt-${i}">${fmt.format(r.total)}</td>
+      <td><button class="mini-btn danger" data-delcap="${i}">✕</button></td>
+    </tr>`;}).join('');
+  const body=$('capRows');
+  body.querySelectorAll('input').forEach(inp=>inp.addEventListener('input',()=>{ const c=editCfg.capacities[+inp.dataset.cap]; c[inp.dataset.f]= inp.dataset.f==='model'?inp.value:(parseFloat(inp.value)||0); updateCapComputed(+inp.dataset.cap); }));
+  body.querySelectorAll('[data-delcap]').forEach(b=>b.onclick=()=>{ editCfg.capacities.splice(+b.dataset.delcap,1); renderCaps(); });
+}
+function updateCapComputed(only){
+  editCfg.capacities.forEach((c,i)=>{ if(only!==undefined && only!==i) return; const r=capRow(c,editCfg.capacitySettings);
+    if($('ro-kw-'+i)){ $('ro-kw-'+i).textContent=kwTxt(r.kw); $('ro-pc-'+i).textContent=fmt.format(r.panelCost); $('ro-rf-'+i).textContent=fmt.format(r.roofBase); $('ro-lb-'+i).textContent=fmt.format(r.labour); $('ro-tt-'+i).textContent=fmt.format(r.total); }
+  });
+}
+function renderInvBlocks(){
+  const host=$('invBlocks');
+  host.innerHTML=editCfg.inverters.map((inv,ii)=>`
+    <div class="brand-block">
+      <div class="bb-head">${ordBtns(ii,editCfg.inverters.length,'inv')}<input type="text" value="${esc(inv.brand)}" data-inv="${ii}" data-f="brand"><button class="mini-btn danger" data-delinv="${ii}">Remove brand</button></div>
+      <div class="tscroll"><table class="tbl"><thead><tr><th></th><th>Battery model</th><th>Usable kWh</th><th>Product $</th><th>Labour $</th><th>Profit $</th><th>Package $ inc GST</th><th></th></tr></thead>
+      <tbody>${inv.batteries.map((b,bi)=>`<tr>
+        <td>${ordBtns(bi,inv.batteries.length,'bat',ii)}</td>
+        <td><input type="text" value="${esc(b.model)}" data-inv="${ii}" data-bat="${bi}" data-f="model"></td>
+        <td><input type="number" step="0.01" value="${b.kwh}" data-inv="${ii}" data-bat="${bi}" data-f="kwh" style="max-width:90px"></td>
+        <td><input type="number" step="1" value="${b.productPrice}" data-inv="${ii}" data-bat="${bi}" data-f="productPrice" style="max-width:100px"></td>
+        <td><input type="number" step="1" value="${b.labourPrice}" data-inv="${ii}" data-bat="${bi}" data-f="labourPrice" style="max-width:100px"></td>
+        <td><input type="number" step="1" value="${b.profit||0}" data-inv="${ii}" data-bat="${bi}" data-f="profit" style="max-width:100px"></td>
+        <td class="ro total" id="ro-pkg-${ii}-${bi}">${fmt.format(((Number(b.productPrice)||0)+(Number(b.labourPrice)||0))*1.1)}</td>
+        <td><button class="mini-btn danger" data-delbat="${ii}-${bi}">✕</button></td>
+      </tr>`).join('')}</tbody></table></div>
+      <button class="mini-btn" data-addbat="${ii}" style="margin-top:8px">+ Add battery</button>
+    </div>`).join('');
+
+  host.querySelectorAll('input[data-f="brand"]').forEach(inp=>inp.addEventListener('input',()=>{ editCfg.inverters[+inp.dataset.inv].brand=inp.value; }));
+  host.querySelectorAll('input[data-bat]').forEach(inp=>inp.addEventListener('input',()=>{ const b=editCfg.inverters[+inp.dataset.inv].batteries[+inp.dataset.bat]; b[inp.dataset.f]= inp.dataset.f==='model'?inp.value:(parseFloat(inp.value)||0);
+    if(inp.dataset.f==='productPrice'||inp.dataset.f==='labourPrice'){ const cell=$('ro-pkg-'+inp.dataset.inv+'-'+inp.dataset.bat); if(cell) cell.textContent=fmt.format(((Number(b.productPrice)||0)+(Number(b.labourPrice)||0))*1.1); } }));
+  host.querySelectorAll('[data-addbat]').forEach(btn=>btn.onclick=()=>{ editCfg.inverters[+btn.dataset.addbat].batteries.push({id:uid('bat'),model:'New battery',kwh:0,productPrice:0,labourPrice:0,profit:0}); renderInvBlocks(); });
+  host.querySelectorAll('[data-delbat]').forEach(btn=>btn.onclick=()=>{ const [ii,bi]=btn.dataset.delbat.split('-').map(Number); editCfg.inverters[ii].batteries.splice(bi,1); renderInvBlocks(); });
+  host.querySelectorAll('[data-delinv]').forEach(btn=>btn.onclick=()=>{ editCfg.inverters.splice(+btn.dataset.delinv,1); renderInvBlocks(); });
+}
+function renderAdders(){
+  const groups=[['roofPerPanel','Roof — $ per panel, ex GST (Tin/Tile baked into capacity rows; clip lock & terracotta grossed up ×1.1)'],['house','House type'],['subBoard','Sub-board'],['phase','Phase'],['backup','Backup']];
+  $('adderBlocks').innerHTML=groups.map(([key,label])=>{ const entries=Object.entries(editCfg.adders[key]);
+    return `<div class="brand-block"><div class="bb-head"><strong style="font-size:.9rem">${label}</strong></div>
+      <div class="tscroll"><table class="tbl"><thead><tr><th></th><th>Option</th><th>${key==='roofPerPanel'?'$ per panel':'Added $'}</th><th></th></tr></thead>
+      <tbody>${entries.map(([opt,price],oi)=>`<tr>
+        <td>${ordBtns(oi,entries.length,'adder',key)}</td>
+        <td><input type="text" value="${esc(opt)}" data-ad="${key}" data-oi="${oi}" data-f="name"></td>
+        <td><input type="number" step="1" value="${price}" data-ad="${key}" data-oi="${oi}" data-f="price"></td>
+        <td><button class="mini-btn danger" data-delad="${key}|${opt}">✕</button></td>
+      </tr>`).join('')}</tbody></table></div>
+      <button class="mini-btn" data-addad="${key}" style="margin-top:8px">+ Add option</button></div>`;}).join('');
+
+  const host=$('adderBlocks');
+  host.querySelectorAll('input[data-f="name"]').forEach(inp=>inp.addEventListener('change',()=>{ const key=inp.dataset.ad; const oi=+inp.dataset.oi; const e=Object.entries(editCfg.adders[key]); e[oi][0]=inp.value; editCfg.adders[key]=Object.fromEntries(e); renderAdders(); }));
+  host.querySelectorAll('input[data-f="price"]').forEach(inp=>inp.addEventListener('input',()=>{ const key=inp.dataset.ad; const oi=+inp.dataset.oi; const e=Object.entries(editCfg.adders[key]); e[oi][1]=parseFloat(inp.value)||0; editCfg.adders[key]=Object.fromEntries(e); }));
+  host.querySelectorAll('[data-addad]').forEach(btn=>btn.onclick=()=>{ editCfg.adders[btn.dataset.addad]['New option']=0; renderAdders(); });
+  host.querySelectorAll('[data-delad]').forEach(btn=>btn.onclick=()=>{ const idx=btn.dataset.delad.indexOf('|'); const key=btn.dataset.delad.slice(0,idx); const opt=btn.dataset.delad.slice(idx+1); delete editCfg.adders[key][opt]; renderAdders(); });
+}
+
+function getPath(o,p){ return p.split('.').reduce((a,k)=>a&&a[k],o); }
+function setPath(o,p,v){ const ks=p.split('.'); const last=ks.pop(); let t=o; ks.forEach(k=>t=t[k]); t[last]=v; }
+function esc(s){ return String(s).replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+/* ============ ADMIN GATE (Google identity, enforced server-side) ============ */
+$('adminToggle').addEventListener('click', ()=>{
+  const p=$('adminPanel');
+  if(p.classList.contains('open')){ p.classList.remove('open'); return; }
+  if(!IS_ADMIN){ alert('Your Google account does not have edit access.\nAsk an admin to add your email to the admin list in Code.gs.'); return; }
+  adminRender();
+  p.classList.add('open');
+  p.scrollIntoView({behavior:'smooth'});
+});
+
+$('cfgNote').innerHTML='STC &amp; rebate defaults reflect 2026 settings (5 deeming years, battery factor 6.8 for May–Dec 2026, Solar VIC $1,400 + matching loan). Per-battery profit margins are hidden from this view. Confirm figures against the Clean Energy Regulator and Solar Victoria before quoting.';
+
+boot();
+</script>
+</body>
+</html>

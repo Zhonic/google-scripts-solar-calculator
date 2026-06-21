@@ -1,0 +1,25 @@
+{
+  "meta": { "pricesIncludeGST": true },
+  "stc": { "deemingYears": 5, "price": 38, "zoneRating": { "VIC": 1.382, "NSW": 1.382, "QLD": 1.382 } },
+  "batteryStc": { "factor": 6.8, "price": 38, "tiers": [ {"upTo":14,"pct":1.0}, {"upTo":28,"pct":0.6}, {"upTo":50,"pct":0.15} ] },
+  "solarVic": { "rebate": 1400, "loan": 1400 },
+  "capacitySettings": { "tinTilePerPanel": 0, "labourFactor": 0.28 },
+  "capacities": [
+    { "panels": 13, "watts": 440, "pricePerWatt": 0.62, "model": "Example 440W Mono" },
+    { "panels": 15, "watts": 440, "pricePerWatt": 0.62, "model": "Example 440W Mono" },
+    { "panels": 20, "watts": 440, "pricePerWatt": 0.60, "model": "Example 440W Mono" }
+  ],
+  "inverters": [
+    { "brand": "Fox ESS",   "batteries": [ {"model":"Fox ESS 10.4kWh","kwh":10.4,"productPrice":4200,"labourPrice":900,"profit":800} ] },
+    { "brand": "Goodwe",    "batteries": [ {"model":"Goodwe Lynx 12.8kWh","kwh":12.8,"productPrice":4800,"labourPrice":900,"profit":900} ] },
+    { "brand": "Tesla",     "batteries": [ {"model":"Tesla Powerwall 3","kwh":13.5,"productPrice":8500,"labourPrice":1200,"profit":1100} ] },
+    { "brand": "Sigenergy", "batteries": [ {"model":"Sigenergy 16kWh","kwh":16,"productPrice":9200,"labourPrice":1200,"profit":1200} ] }
+  ],
+  "adders": {
+    "roofPerPanel": { "Tin": 0, "Tile": 0, "Clip lock": 25, "Terracotta": 0 },
+    "house": { "Single": 0, "Double": 350, "Scissor lift required": 1200 },
+    "subBoard": { "No": 0, "Yes": 450 },
+    "phase": { "Single": 0, "Two": 250, "Three": 400 },
+    "backup": { "No": 0, "Partial single phase": 600, "Full-house single phase": 1100, "Partial three phase": 900, "Full-house three phase": 1600 }
+  }
+}

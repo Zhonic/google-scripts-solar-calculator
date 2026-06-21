@@ -1,0 +1,24 @@
+# clasp (Apps Script CLI) credentials — NEVER commit these
+.clasp.json
+.clasprc.json
+clasp.json
+
+# Local environment / secrets
+.env
+.env.*
+*.local
+
+# Node (only if you use clasp or local tooling)
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Editor / OS noise
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Exported pricing backups (may contain real cost/margin data — keep out of the repo)
+solar-config.json
+*-config.backup.json
